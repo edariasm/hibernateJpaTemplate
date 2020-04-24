@@ -1,0 +1,119 @@
+Hibernate & JPA 2
+
+Hibernate is the bridge to use JPA. It has its own query language (HQL)
+
+>new maven project >
+pom.xml
+<project>
+  [...]
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+  [...]
+</project>
+
+
+or configure directly
+
+<project>
+  [...]
+  <build>
+    [...]
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+    </plugins>
+    [...]
+  </build>
+  [...]
+</project>
+
+
+Then you need to add hibernate to the project. At hibernate.org you can copy the maven hibernate dependencies required https://bintray.com/hibernate/artifacts/hibernate-orm
+
+
+<dependency>
+  <groupId>org.hibernate</groupId>
+  <artifactId>hibernate-agroal</artifactId>
+  <version>5.4.14.Final</version>
+  <type>pom</type>
+</dependency>
+
+
+Another dependency is javax-persistance api 2.1, from maven central repo 
+<!-- https://mvnrepository.com/artifact/org.hibernate.javax.persistence/hibernate-jpa-2.1-api -->
+<dependency>
+    <groupId>org.hibernate.javax.persistence</groupId>
+    <artifactId>hibernate-jpa-2.1-api</artifactId>
+    <version>1.0.2.Final</version>
+</dependency>
+
+
+Add hibernate core (entity manager is deprecated) from maven central repo
+<!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-core -->
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-core</artifactId>
+    <version>5.4.14.Final</version>
+</dependency
+
+
+Add your database dependency, in this example ms-sqlserver. Eclipse requires jdbc sql driver to be installed. For this project we are using H2 as database.
+
+<dependency>
+	<groupId>com.h2database</groupId>
+	<artifactId>h2</artifactId>
+	<version>1.4.200</version>
+	<scope>test</scope>
+</dependency>
+
+
+Next step is create entities. 
+In src/main/resouces create a folder META-INF to add the xml, if is web in web inf we create that folder. Within we create persistence.xml file. This will be the bridge between hibernate and our database. Content of xml file is the following
+
+<persistence xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence
+             http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0" xmlns="http://java.sun.com/xml/ns/persistence">
+<?xml version="1.0" encoding="UTF-8"?>
+  <persistence-unit name="aplicacion">
+  
+  <!-- in this line we will place the class or classes that we want to use through this file -->
+  
+    <properties>
+        <property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
+        <property name="javax.persistence.jdbc.url" value=" jdbc:h2:tcp://localhost/~/Practicas" />
+        <property name="javax.persistence.jdbc.user" value="sa" />
+        <property name="javax.persistence.jdbc.password" value="" />
+        <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+        <property name="hibernate.hbm2ddl.auto" value="update" />
+    </properties>
+  </persistence-unit>
+</persistence>
+
+important to provide a name in this line <persistence-unit name="aplicacion"> in this case name is aplicacion but it can be any name, and it will be the reference to use. In properties we need to add the correct value for each tag.
+
+Create an entity as new class, into a Model package in src/main/java. Add the attributes, getters and setters, an empty constructor, a constructor with the fields (do it with eclipse source) and a toString method to present data in console. This class implements Serializable, and its version. 
+
+Now we need to add the anotations:
+
+@Entity > for the class itself to be recognized as an entity, from javax persistence
+@Table > for the class itself to add a name add the property name="nombre"
+
+@Column for the attributes, then JPA will read them as columns of the table. Add the attribute name="nombre"
+@Id for the identifier only. 
+
+We need to add this class to the persistence.xml file in order to hibernate to handle it. Add the tag <class> with the file, under the application name and before the properties. 
+<class>ea.templateProject.model.Empleado</class>
+
+Now we have to create an interface to manage the entity. In this example it is created in a package named tests. 
+We create an instance of EntityManager from the persistence library, and with it we can use the methods for queries like .createQuery etc
+At this point the structure required the "traditional" way, meaning create an entity manager instance, and entity manager factory, in order to do operations on the database. In this example emf = Persistence.createEntityManagerFactory("aplicacion"); aplicacion is the name we placed in the xml.
